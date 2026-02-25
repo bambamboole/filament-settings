@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Bambamboole\FilamentSettings;
 
+use Bambamboole\FilamentSettings\Commands\MakeSettingGroupCommand;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -19,6 +20,7 @@ class FilamentSettingsServiceProvider extends PackageServiceProvider
             ->hasViews(static::$viewNamespace)
             ->hasTranslations()
             ->hasMigrations(['create_settings_table'])
+            ->hasCommands([MakeSettingGroupCommand::class])
             ->hasInstallCommand(function (InstallCommand $command): void {
                 $command
                     ->publishConfigFile()

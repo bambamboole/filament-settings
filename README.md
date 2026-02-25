@@ -39,6 +39,36 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+## Generating a Setting Group
+
+Use the Artisan command to scaffold a new `SettingGroup` class interactively:
+
+```bash
+php artisan settings:make-group
+```
+
+The command asks for a class name, group key, and label, then writes the skeleton to `app/Settings/{ClassName}.php`:
+
+```
+ ┌ Class name ──────────────────────────────────────────────────┐
+ │ GeneralSettings                                              │
+ └──────────────────────────────────────────────────────────────┘
+
+ ┌ Group key ───────────────────────────────────────────────────┐
+ │ general                                                      │
+ └──────────────────────────────────────────────────────────────┘
+
+ ┌ Label ───────────────────────────────────────────────────────┐
+ │ General                                                      │
+ └──────────────────────────────────────────────────────────────┘
+
+ ◇  Created: app/Settings/GeneralSettings.php
+```
+
+The group key is derived automatically from the class name (`GeneralSettings` → `general`, `MailNotificationSettings` → `mail-notification`). Accept the defaults or type a custom value.
+
+After generation, open the file and fill in `schema()` with Filament form components and optionally add `casts()`, `icon()`, and `sort()`.
+
 ## Defining a Setting Group
 
 Create a class that extends `SettingGroup`. The `key()` is used as the DB prefix and the tab identifier; `schema()` returns standard Filament form components:
