@@ -10,9 +10,6 @@ final class SettingFactory extends Factory
 {
     protected $model = Setting::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

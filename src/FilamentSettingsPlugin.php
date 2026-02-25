@@ -34,7 +34,7 @@ class FilamentSettingsPlugin implements Plugin
 
     public function boot(Panel $panel): void
     {
-        if ($this->tenantResolver !== null) {
+        if ($this->tenantResolver instanceof \Closure) {
             app(SettingsRepository::class)->setTenantResolver($this->tenantResolver);
         }
     }
@@ -66,7 +66,7 @@ class FilamentSettingsPlugin implements Plugin
 
     public function isAuthorized(): bool
     {
-        if ($this->canAccess === null) {
+        if (!$this->canAccess instanceof \Closure) {
             return true;
         }
 

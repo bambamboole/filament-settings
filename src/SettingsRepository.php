@@ -125,7 +125,7 @@ final class SettingsRepository
 
     public function resolveTenantId(): mixed
     {
-        if ($this->tenantResolver === null) {
+        if (!$this->tenantResolver instanceof \Closure) {
             return null;
         }
 
@@ -179,7 +179,7 @@ final class SettingsRepository
 
     private function cacheKey(string $key): string
     {
-        if (config('filament-settings.tenant.enabled', false) && $this->tenantResolver !== null) {
+        if (config('filament-settings.tenant.enabled', false) && $this->tenantResolver instanceof \Closure) {
             $tenantId = $this->resolveTenantId() ?? 'global';
 
             return "settings.{$tenantId}.{$key}";

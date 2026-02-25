@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * @property string $key
+ */
 final class Setting extends Model
 {
     /** @use HasFactory<\Bambamboole\FilamentSettings\Database\Factories\SettingFactory> */
@@ -15,6 +18,7 @@ final class Setting extends Model
     /** @var list<string> */
     protected $fillable = ['key', 'value'];
 
+    #[\Override]
     protected static function booted(): void
     {
         self::addGlobalScope('tenant', function (Builder $builder): void {

@@ -24,16 +24,19 @@ class ManageSettings extends Page
     /** @var array<string, array<string, mixed>> */
     public array $formState = [];
 
+    #[\Override]
     public static function canAccess(): bool
     {
         return FilamentSettingsPlugin::get()->isAuthorized();
     }
 
+    #[\Override]
     public static function getNavigationSort(): ?int
     {
         return FilamentSettingsPlugin::get()->getNavigationSort();
     }
 
+    #[\Override]
     public static function getNavigationGroup(): ?string
     {
         return FilamentSettingsPlugin::get()->getNavigationGroup();
@@ -46,6 +49,7 @@ class ManageSettings extends Page
         }
     }
 
+    #[\Override]
     public function content(Schema $schema): Schema
     {
         $tabs = [];
@@ -96,11 +100,13 @@ class ManageSettings extends Page
         }
     }
 
+    #[\Override]
     public function getTitle(): string
     {
         return __('filament-settings::filament-settings.title');
     }
 
+    #[\Override]
     public function getHeading(): string
     {
         return __('filament-settings::filament-settings.heading');

@@ -59,7 +59,19 @@
         "refactor": "rector",
         "test": "pest",
         "test:lint": "pint --test",
-        "test:refactor": "rector --dry-run"
+        "test:refactor": "rector --dry-run",
+        "pest": "./vendor/bin/pest",
+        "rector": "./vendor/bin/rector process --ansi",
+        "rector:show": "./vendor/bin/rector --dry-run --ansi",
+        "pint": "./vendor/bin/pint",
+        "phpstan": "./vendor/bin/phpstan analyse",
+        "phpstan:baseline": "vendor/bin/phpstan analyse --generate-baseline",
+        "all": [
+            "@pint",
+            "@rector",
+            "@phpstan",
+            "@pest"
+        ]
     },
     "extra": {
         "laravel": {
