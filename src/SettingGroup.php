@@ -37,6 +37,14 @@ abstract class SettingGroup
     }
 
     /**
+     * Determine if the current user can access this setting group.
+     */
+    public static function canAccess(): bool
+    {
+        return true;
+    }
+
+    /**
      * Sort order for display (lower = first).
      */
     public function sort(): int

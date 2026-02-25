@@ -6,6 +6,7 @@ use BackedEnum;
 use Bambamboole\FilamentSettings\FilamentSettingsPlugin;
 use Bambamboole\FilamentSettings\SettingGroup;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -124,8 +125,8 @@ class ManageSettings extends Page
         }
 
         $groups = array_map(
-            fn (string $class): SettingGroup => new $class,
-            $groupClasses,
+            static fn (string $class): SettingGroup => new $class,
+            array_filter($groupClasses, static fn (string $class): bool => $class::canAccess()),
         );
 
         usort($groups, fn (SettingGroup $a, SettingGroup $b): int => $a->sort() <=> $b->sort());
