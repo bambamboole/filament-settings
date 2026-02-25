@@ -10,9 +10,4 @@ return [
         'enabled' => env('SETTINGS_CACHE_ENABLED', true),
         'ttl' => env('SETTINGS_CACHE_TTL', 3600),
     ],
-
-    'tenant' => [
-        'enabled' => false,
-        'column' => 'team_id',
-    ],
 ];

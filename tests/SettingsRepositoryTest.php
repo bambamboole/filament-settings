@@ -38,29 +38,29 @@ it('caches the raw value', function () {
 
     settings('general.site-name');
 
-    expect(Cache::has('settings.general.site-name'))->toBeTrue();
+    expect(Cache::has('settings.global'))->toBeTrue();
 });
 
 it('clears cache when a setting is saved', function () {
     Setting::query()->create(['key' => 'general.site-name', 'value' => 'Old']);
     settings('general.site-name');
 
-    expect(Cache::has('settings.general.site-name'))->toBeTrue();
+    expect(Cache::has('settings.global'))->toBeTrue();
 
     Setting::query()->where('key', 'general.site-name')->first()->update(['value' => 'New']);
 
-    expect(Cache::has('settings.general.site-name'))->toBeFalse();
+    expect(Cache::has('settings.global'))->toBeFalse();
 });
 
 it('clears cache when a setting is deleted', function () {
     $setting = Setting::query()->create(['key' => 'general.site-name', 'value' => 'Old']);
     settings('general.site-name');
 
-    expect(Cache::has('settings.general.site-name'))->toBeTrue();
+    expect(Cache::has('settings.global'))->toBeTrue();
 
     $setting->delete();
 
-    expect(Cache::has('settings.general.site-name'))->toBeFalse();
+    expect(Cache::has('settings.global'))->toBeFalse();
 });
 
 it('respects cache.enabled config', function () {
@@ -70,7 +70,7 @@ it('respects cache.enabled config', function () {
 
     settings('general.site-name');
 
-    expect(Cache::has('settings.general.site-name'))->toBeFalse();
+    expect(Cache::has('settings.global'))->toBeFalse();
 });
 
 it('returns the repository when called without arguments', function () {
@@ -132,7 +132,7 @@ it('persists a value via repository set()', function () {
 
     expect(Setting::query()->where('key', 'general.site-name')->value('value'))
         ->toBe('New Site');
-    expect(Cache::has('settings.general.site-name'))->toBeFalse();
+    expect(Cache::has('settings.global'))->toBeFalse();
 });
 
 it('removes setting via repository set() with null', function () {
@@ -164,5 +164,5 @@ it('returns null cast for an unknown setting key', function () {
 it('caches cast lookups', function () {
     settings()->getCast('general.launched');
 
-    expect(Cache::has('settings.cast.general.launched'))->toBeTrue();
+    expect(Cache::has('settings.casts'))->toBeTrue();
 });

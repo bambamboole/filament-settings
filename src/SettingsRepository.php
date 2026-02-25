@@ -37,11 +37,12 @@ final class SettingsRepository
     {
         if ($value === null || $value === '') {
             Setting::query()->where('key', $key)->delete();
+            Cache::forget($this->tenantCacheKey());
         } else {
             $serialized = is_bool($value) ? ($value ? '1' : '0') : (string) $value;
 
             Setting::query()->updateOrCreate(
-                ['key' => $key],
+                ['key' => $key, 'team_id' => $this->resolveTenantId()],
                 ['value' => $serialized],
             );
         }
@@ -97,7 +98,7 @@ final class SettingsRepository
             return $default;
         }
 
-        $decoded = json_decode($raw, true);
+        $decoded = json_decode((string) $raw, true);
 
         return is_array($decoded) ? $decoded : $default;
     }
@@ -108,14 +109,16 @@ final class SettingsRepository
     public function getCast(string $key): ?string
     {
         if (!$this->cacheEnabled()) {
-            return $this->resolveCast($key);
+            return $this->resolveAllCasts()[$key] ?? null;
         }
 
-        return Cache::remember(
-            $this->cacheKey("cast.{$key}"),
+        $casts = Cache::remember(
+            $this->castsCacheKey(),
             $this->cacheTtl(),
-            fn (): ?string => $this->resolveCast($key),
+            fn (): array => $this->resolveAllCasts(),
         );
+
+        return $casts[$key] ?? null;
     }
 
     public function setTenantResolver(Closure $resolver): void
@@ -125,44 +128,68 @@ final class SettingsRepository
 
     public function resolveTenantId(): mixed
     {
-        if (!$this->tenantResolver instanceof \Closure) {
-            return null;
+        if ($this->tenantResolver instanceof \Closure) {
+            return ($this->tenantResolver)();
         }
 
-        return ($this->tenantResolver)();
+        return \Filament\Facades\Filament::getTenant()?->getKey();
+    }
+
+    /**
+     * Cache key for all settings belonging to the current tenant.
+     */
+    public function tenantCacheKey(): string
+    {
+        $tenantId = $this->resolveTenantId();
+
+        return $tenantId !== null ? "settings.{$tenantId}" : 'settings.global';
+    }
+
+    /**
+     * Cache key for the combined casts map across all registered groups.
+     */
+    public function castsCacheKey(): string
+    {
+        return 'settings.casts';
     }
 
     /**
      * Read the raw string value from the database, with optional caching.
      */
-    private function raw(string $key): ?string
+    private function raw(string $key): mixed
     {
         if (!$this->cacheEnabled()) {
             return Setting::query()->where('key', $key)->value('value');
         }
 
-        return Cache::remember(
-            $this->cacheKey($key),
+        $all = Cache::remember(
+            $this->tenantCacheKey(),
             $this->cacheTtl(),
-            static fn (): mixed => Setting::query()->where('key', $key)->value('value'),
+            static fn (): array => Setting::query()->pluck('value', 'key')->all(),
         );
+
+        return $all[$key] ?? null;
     }
 
     /**
-     * Look up the cast type from the matching SettingGroup's casts().
+     * Build the complete casts map from all registered SettingGroup classes.
+     *
+     * @return array<string, string>
      */
-    private function resolveCast(string $key): ?string
+    private function resolveAllCasts(): array
     {
-        $groupKey = strstr($key, '.', true) ?: $key;
-        $fieldName = SettingGroup::toFieldName($this->settingKeyFrom($key));
+        $casts = [];
 
         foreach ($this->resolveGroupClasses() as $groupClass) {
-            if ($groupClass::key() === $groupKey) {
-                return (new $groupClass)->casts()[$fieldName] ?? null;
+            $groupKey = $groupClass::key();
+
+            foreach ((new $groupClass)->casts() as $fieldName => $castType) {
+                $settingKey = SettingGroup::toSettingKey($fieldName);
+                $casts["{$groupKey}.{$settingKey}"] = $castType;
             }
         }
 
-        return null;
+        return $casts;
     }
 
     /**
@@ -177,17 +204,6 @@ final class SettingsRepository
         }
     }
 
-    private function cacheKey(string $key): string
-    {
-        if (config('filament-settings.tenant.enabled', false) && $this->tenantResolver instanceof \Closure) {
-            $tenantId = $this->resolveTenantId() ?? 'global';
-
-            return "settings.{$tenantId}.{$key}";
-        }
-
-        return "settings.{$key}";
-    }
-
     private function cacheEnabled(): bool
     {
         return (bool) config('filament-settings.cache.enabled', true);
@@ -196,15 +212,5 @@ final class SettingsRepository
     private function cacheTtl(): int
     {
         return (int) config('filament-settings.cache.ttl', 3600);
-    }
-
-    /**
-     * Extract the setting key portion after the group prefix.
-     */
-    private function settingKeyFrom(string $key): string
-    {
-        $pos = strpos($key, '.');
-
-        return $pos !== false ? substr($key, $pos + 1) : $key;
     }
 }

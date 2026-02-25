@@ -6,7 +6,6 @@ use BackedEnum;
 use Bambamboole\FilamentSettings\FilamentSettingsPlugin;
 use Bambamboole\FilamentSettings\SettingGroup;
 use Filament\Actions\Action;
-use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;

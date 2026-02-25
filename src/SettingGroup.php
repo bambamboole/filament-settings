@@ -102,7 +102,7 @@ abstract class SettingGroup
                 Setting::query()->where('key', $dbKey)->delete();
             } else {
                 Setting::query()->updateOrCreate(
-                    ['key' => $dbKey],
+                    ['key' => $dbKey, 'team_id' => app(SettingsRepository::class)->resolveTenantId()],
                     ['value' => $this->serializeValue($fieldName, $value)],
                 );
             }

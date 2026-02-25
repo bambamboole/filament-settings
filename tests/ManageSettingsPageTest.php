@@ -56,14 +56,14 @@ it('saves settings to the database', function () {
 });
 
 it('clears cache after saving', function () {
-    Cache::forever('settings.general.site-name', 'old-cached-value');
+    Cache::forever('settings.global', ['general.site-name' => 'old-cached-value']);
 
     livewire(ManageSettings::class)
         ->set('formState.general.site_name', 'New Site')
         ->call('saveGroup', 'general')
         ->assertNotified();
 
-    expect(Cache::get('settings.general.site-name'))->toBeNull();
+    expect(Cache::get('settings.global'))->toBeNull();
 });
 
 it('preserves toggle off state through save and reload', function () {
