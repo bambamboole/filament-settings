@@ -1,0 +1,33 @@
+<?php
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('settings', function (Blueprint $table): void {
+            $table->id();
+
+            if (config('filament-settings.tenant.enabled', false)) {
+                $column = config('filament-settings.tenant.column', 'team_id');
+                $table->unsignedBigInteger($column)->nullable()->index();
+                $table->string('key');
+                $table->unique([$column, 'key']);
+            } else {
+                $table->string('key')->unique();
+            }
+
+            $table->text('value')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('settings');
+    }
+};
