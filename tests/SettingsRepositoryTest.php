@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 use Bambamboole\FilamentSettings\Models\Setting;
 use Bambamboole\FilamentSettings\SettingsRepository;
+use Bambamboole\FilamentSettings\Tests\Fixtures\TestGeneralSettings;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     Cache::flush();
@@ -165,4 +167,69 @@ it('caches cast lookups', function () {
     settings()->getCast('general.launched');
 
     expect(Cache::has('settings.casts'))->toBeTrue();
+});
+
+it('does not re-query when the database has zero settings', function () {
+    // Prime the in-memory cache with an empty table
+    expect(settings()->get('general.site-name'))->toBeNull();
+
+    // Insert a row directly, bypassing model events
+    DB::table('settings')->insert(['key' => 'general.site-name', 'value' => 'Sneaky', 'team_id' => null]);
+
+    // The in-memory cache should still serve the empty snapshot
+    expect(settings()->get('general.site-name'))->toBeNull();
+});
+
+it('returns updated value from get() after set() in the same request', function () {
+    settings()->set('general.site-name', 'First');
+
+    expect(settings()->get('general.site-name'))->toBe('First');
+
+    settings()->set('general.site-name', 'Second');
+
+    expect(settings()->get('general.site-name'))->toBe('Second');
+});
+
+it('returns updated value from get() after SettingGroup::save()', function () {
+    $group = new TestGeneralSettings;
+    $group->save(['site_name' => 'Before']);
+
+    expect(settings()->get('general.site-name'))->toBe('Before');
+
+    $group->save(['site_name' => 'After']);
+
+    expect(settings()->get('general.site-name'))->toBe('After');
+});
+
+it('serves getCast() from in-memory cache after Laravel cache is cleared', function () {
+    $repo = app(SettingsRepository::class);
+
+    // Prime in-memory casts cache
+    expect($repo->getCast('general.launched'))->toBe('boolean');
+
+    // Forget only the Laravel cache layer
+    Cache::forget($repo->castsCacheKey());
+
+    // In-memory cache still serves the cast
+    expect($repo->getCast('general.launched'))->toBe('boolean');
+});
+
+it('loads SettingGroup without extra queries when repo cache is primed', function () {
+    Setting::query()->create(['key' => 'general.site-name', 'value' => 'Cached Site']);
+    Setting::query()->create(['key' => 'general.launched', 'value' => '1']);
+
+    // Prime the repo in-memory cache
+    settings()->all();
+
+    // load() should not hit the DB
+    DB::enableQueryLog();
+    $state = (new TestGeneralSettings)->load();
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)->toBeEmpty();
+    expect($state)->toMatchArray([
+        'site_name' => 'Cached Site',
+        'launched' => true,
+    ]);
 });

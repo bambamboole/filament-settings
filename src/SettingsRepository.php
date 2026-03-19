@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Cache;
 
 final class SettingsRepository
 {
+    private ?array $rawSettings = null;
+
+    private ?array $rawCasts = null;
+
     private ?Closure $tenantResolver = null;
 
     /**
@@ -46,6 +50,8 @@ final class SettingsRepository
                 ['value' => $serialized],
             );
         }
+
+        $this->clearInMemoryCache();
     }
 
     /**
@@ -112,18 +118,52 @@ final class SettingsRepository
             return $this->resolveAllCasts()[$key] ?? null;
         }
 
-        $casts = Cache::remember(
-            $this->castsCacheKey(),
-            $this->cacheTtl(),
-            fn (): array => $this->resolveAllCasts(),
-        );
+        if ($this->rawCasts === null) {
+            $this->rawCasts = Cache::remember(
+                $this->castsCacheKey(),
+                $this->cacheTtl(),
+                fn (): array => $this->resolveAllCasts(),
+            );
+        }
 
-        return $casts[$key] ?? null;
+        return $this->rawCasts[$key] ?? null;
+    }
+
+    /**
+     * Return all raw settings as a key→value map, served from in-memory / Laravel cache when enabled.
+     *
+     * @return array<string, string>
+     */
+    public function all(): array
+    {
+        if (!$this->cacheEnabled()) {
+            return Setting::query()->pluck('value', 'key')->all();
+        }
+
+        if ($this->rawSettings === null) {
+            $this->rawSettings = Cache::remember(
+                $this->tenantCacheKey(),
+                $this->cacheTtl(),
+                static fn (): array => Setting::query()->pluck('value', 'key')->all(),
+            );
+        }
+
+        return $this->rawSettings;
+    }
+
+    /**
+     * Reset in-memory caches so the next read re-fetches from the Laravel cache or DB.
+     */
+    public function clearInMemoryCache(): void
+    {
+        $this->rawSettings = null;
+        $this->rawCasts = null;
     }
 
     public function setTenantResolver(Closure $resolver): void
     {
         $this->tenantResolver = $resolver;
+        $this->clearInMemoryCache();
     }
 
     public function resolveTenantId(): mixed
@@ -162,13 +202,7 @@ final class SettingsRepository
             return Setting::query()->where('key', $key)->value('value');
         }
 
-        $all = Cache::remember(
-            $this->tenantCacheKey(),
-            $this->cacheTtl(),
-            static fn (): array => Setting::query()->pluck('value', 'key')->all(),
-        );
-
-        return $all[$key] ?? null;
+        return $this->all()[$key] ?? null;
     }
 
     /**

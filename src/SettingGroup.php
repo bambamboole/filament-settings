@@ -4,6 +4,8 @@ namespace Bambamboole\FilamentSettings;
 
 use Bambamboole\FilamentSettings\Models\Setting;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 abstract class SettingGroup
@@ -71,12 +73,13 @@ abstract class SettingGroup
     {
         $prefix = static::key().'.';
         $state = [];
+        $allSettings = app(SettingsRepository::class)->all();
 
-        $rows = Setting::query()
-            ->where('key', 'like', $prefix.'%')
-            ->pluck('value', 'key');
+        foreach ($allSettings as $dbKey => $rawValue) {
+            if (!str_starts_with($dbKey, $prefix)) {
+                continue;
+            }
 
-        foreach ($rows as $dbKey => $rawValue) {
             $settingKey = Str::after($dbKey, $prefix);
             $fieldName = self::toFieldName($settingKey);
             $state[$fieldName] = $this->deserializeValue($fieldName, $rawValue);
@@ -93,20 +96,26 @@ abstract class SettingGroup
     public function save(array $data): void
     {
         $prefix = static::key().'.';
+        $repo = app(SettingsRepository::class);
 
-        foreach ($data as $fieldName => $value) {
-            $settingKey = self::toSettingKey($fieldName);
-            $dbKey = $prefix.$settingKey;
+        DB::transaction(function () use ($data, $prefix, $repo): void {
+            foreach ($data as $fieldName => $value) {
+                $settingKey = self::toSettingKey($fieldName);
+                $dbKey = $prefix.$settingKey;
 
-            if ($value === null || $value === '') {
-                Setting::query()->where('key', $dbKey)->delete();
-            } else {
-                Setting::query()->updateOrCreate(
-                    ['key' => $dbKey, 'team_id' => app(SettingsRepository::class)->resolveTenantId()],
-                    ['value' => $this->serializeValue($fieldName, $value)],
-                );
+                if ($value === null || $value === '') {
+                    Setting::query()->where('key', $dbKey)->delete();
+                } else {
+                    Setting::query()->updateOrCreate(
+                        ['key' => $dbKey, 'team_id' => $repo->resolveTenantId()],
+                        ['value' => $this->serializeValue($fieldName, $value)],
+                    );
+                }
             }
-        }
+        });
+
+        Cache::forget($repo->tenantCacheKey());
+        $repo->clearInMemoryCache();
     }
 
     /**
