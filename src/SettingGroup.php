@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Bambamboole\FilamentSettings;
 
 use Bambamboole\FilamentSettings\Models\Setting;
+use Filament\Schemas\Components\Component;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,7 @@ abstract class SettingGroup
     /**
      * The Filament form schema components for this group.
      *
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     abstract public function schema(): array;
 

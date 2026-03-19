@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Bambamboole\FilamentSettings\Commands;
 
+use Bambamboole\FilamentSettings\SettingGroup;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Nette\PhpGenerator\PhpFile;
@@ -70,10 +71,10 @@ class MakeSettingGroupCommand extends Command
         $file->setStrictTypes();
 
         $namespace = $file->addNamespace('App\Settings');
-        $namespace->addUse(\Bambamboole\FilamentSettings\SettingGroup::class);
+        $namespace->addUse(SettingGroup::class);
 
         $class = $namespace->addClass($className);
-        $class->setExtends(\Bambamboole\FilamentSettings\SettingGroup::class);
+        $class->setExtends(SettingGroup::class);
 
         $class->addMethod('key')
             ->setStatic()

@@ -4,6 +4,7 @@ namespace Bambamboole\FilamentSettings;
 
 use Bambamboole\FilamentSettings\Models\Setting;
 use Closure;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Cache;
 
 final class SettingsRepository
@@ -168,11 +169,11 @@ final class SettingsRepository
 
     public function resolveTenantId(): mixed
     {
-        if ($this->tenantResolver instanceof \Closure) {
+        if ($this->tenantResolver instanceof Closure) {
             return ($this->tenantResolver)();
         }
 
-        return \Filament\Facades\Filament::getTenant()?->getKey();
+        return Filament::getTenant()?->getKey();
     }
 
     /**
