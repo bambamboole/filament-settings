@@ -15,6 +15,9 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
+/**
+ * @property Schema $content
+ */
 class ManageSettings extends Page
 {
     protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
@@ -22,7 +25,7 @@ class ManageSettings extends Page
     protected string $view = 'filament-settings::pages.manage-settings';
 
     /** @var array<string, array<string, mixed>> */
-    public array $formState = [];
+    public ?array $formState = [];
 
     #[\Override]
     public static function canAccess(): bool
@@ -44,9 +47,13 @@ class ManageSettings extends Page
 
     public function mount(): void
     {
+        $state = [];
+
         foreach ($this->resolveGroups() as $group) {
-            $this->formState[$group::key()] = $group->load();
+            $state[$group::key()] = $group->load();
         }
+
+        $this->content->fill($state);
     }
 
     #[\Override]

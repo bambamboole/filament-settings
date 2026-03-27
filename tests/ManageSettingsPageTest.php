@@ -26,7 +26,7 @@ it('loads empty state when no DB values exist', function () {
     livewire(ManageSettings::class)
         ->assertOk()
         ->assertSet('formState.general.site_name', null)
-        ->assertSet('formState.general.launched', null);
+        ->assertSet('formState.general.launched', false);
 });
 
 it('loads existing DB values', function () {
@@ -76,6 +76,23 @@ it('preserves toggle off state through save and reload', function () {
 
     livewire(ManageSettings::class)
         ->assertSet('formState.general.launched', false);
+});
+
+it('hydrates default values on mount', function () {
+    livewire(ManageSettings::class)
+        ->assertSet('formState.general.launched', false);
+});
+
+it('persists toggle on state through save and reload', function () {
+    livewire(ManageSettings::class)
+        ->set('formState.general.launched', true)
+        ->call('saveGroup', 'general')
+        ->assertNotified();
+
+    expect(Setting::query()->where('key', 'general.launched')->value('value'))->toBe('1');
+
+    livewire(ManageSettings::class)
+        ->assertSet('formState.general.launched', true);
 });
 
 it('removes setting from DB when value is empty', function () {
